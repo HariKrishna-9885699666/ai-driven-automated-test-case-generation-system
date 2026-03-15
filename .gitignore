@@ -1,0 +1,103 @@
+# =============================================================================
+# SECRETS
+# =============================================================================
+backend/.env
+*.env
+.env.*
+!.env.example
+
+# =============================================================================
+# PYTHON / BACKEND
+# =============================================================================
+# Virtual environment
+backend/venv/
+venv/
+.venv/
+env/
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# pytest
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# mypy / type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# =============================================================================
+# FRONTEND / NODE
+# =============================================================================
+node_modules/
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# Yarn
+frontend/.yarn/cache
+frontend/.yarn/unplugged
+frontend/.yarn/build-state.yml
+frontend/.yarn/install-state.gz
+frontend/.pnp.*
+
+# =============================================================================
+# DATA / GENERATED FILES
+# =============================================================================
+# ChromaDB vector store
+backend/chroma_db/
+chroma_db/
+
+# Uploaded documents
+backend/uploads/
+uploads/
+
+# Fine-tune output (kept for reference even though feature removed)
+fine_tune_output/
+
+# =============================================================================
+# OS
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =============================================================================
+# EDITORS / IDEs
+# =============================================================================
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# LOGS & TEMP
+# =============================================================================
+*.log
+logs/
+tmp/
+temp/
