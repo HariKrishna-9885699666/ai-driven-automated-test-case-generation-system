@@ -24,6 +24,6 @@ CHUNK_SIZE         = 512
 CHUNK_OVERLAP      = 128
 
 # ── Server ────────────────────────────────────────────────────────────────────
-ALLOWED_ORIGINS    = ["http://localhost:3000", "http://localhost:5173"]
+ALLOWED_ORIGINS    = ["http://localhost:3000", "http://localhost:5173", "https://ai-driven-automated-test-case-generator.vercel.app"]
 UPLOAD_DIR         = "./uploads"
 MAX_UPLOAD_SIZE_MB = 50
