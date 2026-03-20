@@ -1,7 +1,10 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL:
+    process.env.NODE_ENV === 'production'
+      ? 'https://ai-driven-automated-test-case-generation.onrender.com/api'
+      : '/api',
   timeout: 120000,
   headers: { 'Content-Type': 'application/json' },
 })

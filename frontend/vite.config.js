@@ -7,7 +7,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://ai-driven-automated-test-case-generation.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
