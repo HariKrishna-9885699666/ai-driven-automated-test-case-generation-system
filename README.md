@@ -2,6 +2,8 @@
 
 Paste Python or JavaScript code -> get unit tests instantly, powered by **Groq LLM + RAG**.
 
+[![Demo](https://img.shields.io/badge/Demo-Live%20Preview-blue?style=for-the-badge)](https://ai-driven-automated-test-case-generator.vercel.app/) 
+
 ---
 
 ## Architecture
