@@ -5,6 +5,13 @@
       <stop offset="100%" style="stop-color:#8b5cf6"/>
     </linearGradient>
   </defs>
+  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
+  <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
+        font-family="Arial, sans-serif" font-weight="800" font-size="13"
+        letter-spacing="-0.5" fill="white">HK</text>
+</svg>
+    </linearGradient>
+  </defs>
   <!-- Background rounded square -->
   <rect width="32" height="32" rx="8" fill="url(#bg)"/>
   <!-- Lightning bolt / zap icon -->
