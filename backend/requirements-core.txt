@@ -8,6 +8,5 @@ aiofiles==24.1.0
 httpx==0.28.1
 
 # ── LLM provider ─────────────────────────────────────────────────────────────
-langchain==0.3.21
-langchain-core==0.3.51
+langchain==1.2.8
 langchain-groq==1.1.2            # Groq — get free key at console.groq.com
