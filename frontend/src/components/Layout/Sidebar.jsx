@@ -30,8 +30,8 @@ export default function Sidebar() {
         </NavLink>
       </nav>
 
-      {/* Footer */}
-      <div className="pt-4 border-t border-white/5">
+      {/* Footer (hidden on mobile) */}
+      <div className="hidden md:block pt-4 border-t border-white/5 md:fixed md:bottom-0 md:w-[220px] md:bg-transparent md:border-t md:border-white/5 md:left-0 md:z-40">
         <div className="glass-card p-3">
           <p className="text-slate-400 text-xs leading-relaxed">
             LLM + RAG automated test generation
