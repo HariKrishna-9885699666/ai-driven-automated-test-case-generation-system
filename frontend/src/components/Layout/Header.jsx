@@ -1,7 +1,8 @@
 import { useLocation } from 'react-router-dom'
 
 const pageInfo = {
-  '/generate': { title: 'Generate Tests', desc: 'Generate unit tests using AI from your code' },
+  '/generate':  { title: 'Generate Tests', desc: 'Generate unit tests using AI from your code' },
+  '/analytics': { title: 'Analytics',      desc: 'Coverage metrics and bug detection trends' },
 }
 
 export default function Header() {
@@ -12,8 +13,9 @@ export default function Header() {
     <header
       className="sticky top-0 z-40 px-4 md:px-6 py-3 md:py-4 bg-[rgba(15,23,42,0.8)] backdrop-blur-[12px] border-b border-white/5"
     >
-      <h2 className="text-xl font-bold text-white">{info.title}</h2>
-      <p className="text-slate-500 text-sm mt-0.5">{info.desc}</p>
+      {/* Title hidden on mobile — the breadcrumb in the top bar already shows the page name */}
+      <h2 className="hidden md:block text-xl font-bold text-white">{info.title}</h2>
+      <p className="hidden md:block text-slate-500 text-sm mt-0.5">{info.desc}</p>
     </header>
   )
 }
