@@ -56,11 +56,27 @@ export default function Generate() {
         throw new Error(data.error || 'Generation failed')
       }
 
+      const stats = data.stats || { total: 0, unit: 0, coverage: '—' }
       setGenerated({
         code: stripCodeFences(data.code || ''),
-        stats: data.stats || { total: 0, unit: 0, coverage: '—' },
+        stats,
         tokens: data.tokens_used || 0,
       })
+
+      // Save to generation history for Analytics
+      try {
+        const history = JSON.parse(localStorage.getItem('testgen_history') || '[]')
+        history.unshift({
+          id: data.job_id || Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          language,
+          framework,
+          stats,
+          tokens: data.tokens_used || 0,
+        })
+        localStorage.setItem('testgen_history', JSON.stringify(history.slice(0, 100)))
+      } catch (_) {}
+
       toast.success('Tests generated!')
     } catch (err) {
       setError(err.message || 'Backend error is port 8000 running?')

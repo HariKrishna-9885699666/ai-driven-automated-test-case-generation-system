@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Zap, Cpu, Github } from 'lucide-react'
+import { Zap, Cpu, Github, BarChart3 } from 'lucide-react'
 
 export default function Sidebar() {
   return (
@@ -20,13 +20,20 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1">
+      <nav className="flex-1 space-y-1">
         <NavLink
           to="/generate"
           className={({ isActive }) => `sidebar-link group ${isActive ? 'active' : ''}`}
         >
           <Zap size={18} className="flex-shrink-0" />
           <span className="flex-1">Generate Tests</span>
+        </NavLink>
+        <NavLink
+          to="/analytics"
+          className={({ isActive }) => `sidebar-link group ${isActive ? 'active' : ''}`}
+        >
+          <BarChart3 size={18} className="flex-shrink-0" />
+          <span className="flex-1">Analytics</span>
         </NavLink>
       </nav>
 

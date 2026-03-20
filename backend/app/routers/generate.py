@@ -19,7 +19,7 @@ router = APIRouter()
 generator_service = TestGeneratorService()
 rag_service = RAGService()
 
-# In-memory job store (use Redis in production)
+# In-memory job store
 jobs: dict = {}
 
 
