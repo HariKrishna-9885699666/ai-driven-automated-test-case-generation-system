@@ -4,13 +4,7 @@ import { Zap, Cpu, Github } from 'lucide-react'
 export default function Sidebar() {
   return (
     <aside
-      className="fixed left-0 top-0 h-screen flex flex-col py-6 px-4 z-50"
-      style={{
-        width: '220px',
-        background: 'rgba(15, 23, 42, 0.95)',
-        backdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255,255,255,0.08)',
-      }}
+      className="fixed md:left-0 md:top-0 md:h-screen md:flex md:flex-col md:py-6 md:px-4 z-50 w-full md:w-[220px] bg-[rgba(15,23,42,0.95)] backdrop-blur-[20px] border-b md:border-b-0 md:border-r border-white/5"
     >
       {/* Logo */}
       <div className="mb-8 px-2">

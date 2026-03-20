@@ -10,12 +10,7 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 px-6 py-4"
-      style={{
-        background: 'rgba(15, 23, 42, 0.8)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
+      className="sticky top-0 z-40 px-4 md:px-6 py-3 md:py-4 bg-[rgba(15,23,42,0.8)] backdrop-blur-[12px] border-b border-white/5"
     >
       <h2 className="text-xl font-bold text-white">{info.title}</h2>
       <p className="text-slate-500 text-sm mt-0.5">{info.desc}</p>
