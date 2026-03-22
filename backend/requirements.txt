@@ -2,11 +2,13 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.0
 pydantic==2.11.2
 pydantic-settings==2.8.1
-python-multipart==0.0.20
-python-dotenv==1.1.0
-aiofiles==24.1.0
-httpx==0.28.1
+python-multipart==0.0.20         # file upload support
 
 # ── LLM provider ─────────────────────────────────────────────────────────────
 langchain==1.2.8
 langchain-groq==1.1.2            # Groq — get free key at console.groq.com
+
+# ── RAG / Vector Store ───────────────────────────────────────────────────────
+chromadb==0.6.3                  # local vector store
+sentence-transformers==3.4.1     # local embeddings, no API key needed
+pdfplumber==0.11.4               # PDF text extraction

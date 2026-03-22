@@ -9,7 +9,7 @@ from typing import List
 from app.constants import (
     DEFAULT_MODEL, MAX_TOKENS, TEMPERATURE,
     CHROMA_PERSIST_DIR, EMBEDDING_MODEL, RAG_TOP_K, CHUNK_SIZE, CHUNK_OVERLAP,
-    ALLOWED_ORIGINS, UPLOAD_DIR, MAX_UPLOAD_SIZE_MB,
+    ALLOWED_ORIGINS, UPLOAD_DIR,
 )
 
 
@@ -35,11 +35,10 @@ class Settings(BaseSettings):
     RAG_TOP_K: int          = RAG_TOP_K
     CHUNK_SIZE: int         = CHUNK_SIZE
     CHUNK_OVERLAP: int      = CHUNK_OVERLAP
+    UPLOAD_DIR: str         = UPLOAD_DIR
 
     # ── Server (defaults from constants.py) ──────────────────────────────
     ALLOWED_ORIGINS: List[str] = ALLOWED_ORIGINS
-    UPLOAD_DIR: str            = UPLOAD_DIR
-    MAX_UPLOAD_SIZE_MB: int    = MAX_UPLOAD_SIZE_MB
 
     class Config:
         env_file = ".env"

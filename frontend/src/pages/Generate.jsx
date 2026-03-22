@@ -1,22 +1,23 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import {
   Zap, Code2, Copy, Download,
   CheckCircle2, AlertCircle, Loader2,
   RefreshCw, Terminal,
   Database, Bot, FlaskConical,
+  Upload, Trash2, FileCode2, ToggleLeft, ToggleRight,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { generateTests, getProviders } from '../services/api'
+import { generateTests, getProviders, indexFile, getIndexStatus, deleteIndexedDoc } from '../services/api'
 import {
   LANGUAGES, FRAMEWORK_FOR, EXT_FOR, HIGHLIGHT_FOR, DEFAULT_MODEL, MAX_TESTS,
 } from '../utils/constants'
 import { parseError, copyToClipboard, downloadFile, stripCodeFences } from '../utils/funcUtils'
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function Generate() {
   const [inputCode, setInputCode]     = useState('')
   const [language, setLanguage]       = useState('Python')
@@ -25,16 +26,68 @@ export default function Generate() {
   const [error, setError]             = useState(null)
   const [activeModel, setActiveModel] = useState(DEFAULT_MODEL)
 
+  // RAG state
+  const [useRag, setUseRag]           = useState(true)
+  const [chunkCount, setChunkCount]   = useState(0)
+  const [indexedDocs, setIndexedDocs] = useState([])   // [{docId, filename, chunks}]
+  const [uploading, setUploading]     = useState(false)
+  const fileInputRef = useRef(null)
+
   const framework = FRAMEWORK_FOR[language]
 
   useEffect(() => {
     getProviders()
       .then((d) => setActiveModel(d.active_model || 'llama-3.3-70b-versatile'))
       .catch(() => {})
+    getIndexStatus()
+      .then((d) => setChunkCount(d.total_chunks ?? 0))
+      .catch(() => {})
   }, [])
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const result = await indexFile(file)
+      setChunkCount(result.total_chunks)
+      setIndexedDocs((prev) => [
+        { docId: result.doc_id, filename: result.filename, chunks: result.chunks_indexed },
+        ...prev,
+      ])
+      toast.success(`Indexed "${file.name}" — ${result.chunks_indexed} chunks`)
+    } catch (err) {
+      toast.error(`Upload failed: ${err.message}`)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleDeleteDoc = async (docId, filename) => {
+    try {
+      const result = await deleteIndexedDoc(docId)
+      setChunkCount(result.total_chunks)
+      setIndexedDocs((prev) => prev.filter((d) => d.docId !== docId))
+      toast.success(`Removed "${filename}" from index`)
+    } catch (err) {
+      toast.error(`Delete failed: ${err.message}`)
+    }
+  }
+
   const handleGenerate = async () => {
-    if (!inputCode.trim()) { toast.error('Paste your code first'); return }
+    const hasCode = inputCode.trim().length > 0
+    const hasRagContext = useRag && chunkCount > 0
+
+    if (!hasCode && !hasRagContext) {
+      toast.error('Paste your code or upload a file to the RAG index first')
+      return
+    }
+
+    // If code is empty but RAG docs are indexed, instruct the LLM to use indexed context
+    const codeToSend = hasCode
+      ? inputCode
+      : 'Generate comprehensive tests based on the code and documentation in the RAG context above.'
 
     setLoading(true)
     setGenerated(null)
@@ -42,13 +95,13 @@ export default function Generate() {
 
     try {
       const data = await generateTests({
-        code: inputCode,
+        code: codeToSend,
         input_type: 'code',
         language,
         framework,
         test_types: ['unit'],
         model: activeModel,
-        use_rag: true,
+        use_rag: useRag,
         max_tests: MAX_TESTS,
       })
 
@@ -61,6 +114,7 @@ export default function Generate() {
         code: stripCodeFences(data.code || ''),
         stats,
         tokens: data.tokens_used || 0,
+        contextUsed: data.context_used || [],
       })
 
       // Save to generation history for Analytics
@@ -122,17 +176,17 @@ export default function Generate() {
             />
 
             <div className="flex items-center justify-between mt-2">
-              <span className="text-slate-600 text-xs">
+              <span className="text-slate-400 text-xs">
                 {inputCode.length.toLocaleString()} chars
               </span>
             </div>
           </Card>
 
-          {/* Fixed config read-only */}
+          {/* Config row */}
           <Card className="p-4">
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5">
-                <span className="text-slate-600 text-xs font-medium flex items-center gap-1">
+                <span className="text-slate-300 text-xs font-medium flex items-center gap-1">
                   <FlaskConical size={11} /> Framework
                 </span>
                 <span className="text-xs font-semibold text-violet-300 bg-violet-500/15 border border-violet-500/25 px-2.5 py-1.5 rounded-lg w-fit">
@@ -140,7 +194,7 @@ export default function Generate() {
                 </span>
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="text-slate-600 text-xs font-medium flex items-center gap-1">
+                <span className="text-slate-300 text-xs font-medium flex items-center gap-1">
                   <Bot size={11} /> Model
                 </span>
                 <span className="text-xs font-semibold text-blue-300 bg-blue-500/15 border border-blue-500/25 px-2.5 py-1.5 rounded-lg w-fit truncate max-w-full" title={activeModel}>
@@ -148,15 +202,73 @@ export default function Generate() {
                 </span>
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="text-slate-600 text-xs font-medium flex items-center gap-1">
+                <span className="text-slate-300 text-xs font-medium flex items-center gap-1">
                   <Database size={11} /> RAG Context
                 </span>
-                <span className="text-xs font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-1.5 rounded-lg w-fit flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow" />
-                  Enabled
-                </span>
+                <button
+                  onClick={() => setUseRag((v) => !v)}
+                  className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg w-fit flex items-center gap-1.5 border transition-all ${
+                    useRag
+                      ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/25'
+                      : 'text-slate-400 bg-white/5 border-white/10'
+                  }`}
+                >
+                  {useRag
+                    ? <><ToggleRight size={13} /><span>On · {chunkCount} chunks</span></>
+                    : <><ToggleLeft size={13} /><span>Off</span></>}
+                </button>
               </div>
             </div>
+          </Card>
+
+          {/* RAG knowledge base upload panel */}
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-slate-300 text-xs font-semibold flex items-center gap-1.5">
+                <Database size={13} className="text-primary-400" /> RAG Knowledge Base
+              </span>
+              <span className="text-slate-400 text-xs">{chunkCount} chunks stored</span>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".py,.js,.ts,.txt,.md,.pdf"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="w-full border border-dashed border-white/15 rounded-xl py-3 text-xs text-slate-400 hover:border-primary-500/50 hover:text-slate-300 hover:bg-primary-500/5 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {uploading
+                ? <><Loader2 size={13} className="animate-spin" /> Indexing...</>
+                : <><Upload size={13} /> Upload code / docs / PDF to index</>}
+            </button>
+            <p className="text-slate-400 text-xs mt-1.5 text-center">
+              .py .js .ts .txt .md .pdf
+            </p>
+
+            {indexedDocs.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {indexedDocs.map(({ docId, filename, chunks }) => (
+                  <div key={docId} className="flex items-center justify-between bg-white/5 border border-white/8 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileCode2 size={12} className="text-primary-400 flex-shrink-0" />
+                      <span className="text-xs text-slate-300 truncate">{filename}</span>
+                      <span className="text-xs text-slate-400 flex-shrink-0">{chunks} chunks</span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteDoc(docId, filename)}
+                      className="text-slate-400 hover:text-red-400 transition-colors ml-2 flex-shrink-0"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Button
@@ -259,11 +371,11 @@ export default function Generate() {
             <Card className="p-6">
               <div className="flex flex-col items-center text-center py-16">
                 <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-                  <Zap size={28} className="text-slate-600" />
+                  <Zap size={28} className="text-slate-400" />
                 </div>
-                <h4 className="text-slate-400 font-medium mb-2">Ready to Generate</h4>
-                <p className="text-slate-600 text-sm max-w-xs">
-                  Paste your <strong className="text-slate-400">{language}</strong> code on the left, then click <strong className="text-slate-400">Generate Unit Tests</strong>.
+                <h4 className="text-slate-200 font-medium mb-2">Ready to Generate</h4>
+                <p className="text-slate-400 text-sm max-w-xs">
+                  Paste your <strong className="text-slate-200">{language}</strong> code on the left, then click <strong className="text-slate-200">Generate Unit Tests</strong>.
                 </p>
               </div>
             </Card>
@@ -280,10 +392,26 @@ export default function Generate() {
                 ].map(({ label, value, color }) => (
                   <Card key={label} className="p-3 text-center">
                     <p className={`text-xl font-bold ${color}`}>{value}</p>
-                    <p className="text-slate-500 text-xs mt-0.5">{label}</p>
+                    <p className="text-slate-300 text-xs mt-0.5">{label}</p>
                   </Card>
                 ))}
               </div>
+
+              {/* RAG context sources used */}
+              {generated.contextUsed?.length > 0 && (
+                <Card className="p-3">
+                  <p className="text-xs text-slate-300 font-medium flex items-center gap-1.5 mb-2">
+                    <Database size={11} className="text-primary-400" /> RAG context used
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {generated.contextUsed.map((src, i) => (
+                      <span key={i} className="text-xs bg-primary-500/10 border border-primary-500/20 text-primary-300 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <FileCode2 size={10} /> {src}
+                      </span>
+                    ))}
+                  </div>
+                </Card>
+              )}
 
               <Card className="overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
@@ -291,7 +419,7 @@ export default function Generate() {
                     <Code2 size={13} className="text-primary-400" />
                     <span className="text-sm font-medium text-slate-300">Generated Tests</span>
                     <span className="tag-info text-xs">{framework}</span>
-                    <span className="text-slate-600 text-xs">{generated.tokens} tokens</span>
+                    <span className="text-slate-400 text-xs">{generated.tokens} tokens</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={copyOutput} className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1">

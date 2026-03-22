@@ -253,9 +253,6 @@ export default function Analytics() {
             </tbody>
           </table>
         </div>
-        <p className="text-slate-700 text-xs mt-3">
-          Coverage is estimated from assertion density. Bug detection is based on edge/boundary test count.
-        </p>
       </Card>
     </div>
   )

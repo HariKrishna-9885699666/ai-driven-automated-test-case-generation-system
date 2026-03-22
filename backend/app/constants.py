@@ -17,13 +17,12 @@ GROQ_MODELS = [
 ]
 
 # ── RAG / Vector Store ────────────────────────────────────────────────────────
-CHROMA_PERSIST_DIR = "./chroma_db"
-EMBEDDING_MODEL    = "text-embedding-3-small"
-RAG_TOP_K          = 4
-CHUNK_SIZE         = 512
-CHUNK_OVERLAP      = 128
+CHROMA_PERSIST_DIR = "./chroma_db"          # ChromaDB storage folder
+EMBEDDING_MODEL    = "all-MiniLM-L6-v2"    # fast local sentence-transformer model
+RAG_TOP_K          = 4                      # chunks retrieved per query
+CHUNK_SIZE         = 512                    # chars per chunk
+CHUNK_OVERLAP      = 100                    # overlap between consecutive chunks
+UPLOAD_DIR         = "./uploads"            # temp folder for uploaded files
 
 # ── Server ────────────────────────────────────────────────────────────────────
-ALLOWED_ORIGINS    = ["http://localhost:3000", "http://localhost:5173", "https://ai-driven-automated-test-case-generator.vercel.app"]
-UPLOAD_DIR         = "./uploads"
-MAX_UPLOAD_SIZE_MB = 50
+ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:5173", "https://ai-driven-automated-test-case-generator.vercel.app"]

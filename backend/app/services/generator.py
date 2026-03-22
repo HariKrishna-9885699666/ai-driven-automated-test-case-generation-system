@@ -2,7 +2,7 @@
 Test Generator Service — powered by Groq (llama / mixtral / gemma models).
 Set GROQ_API_KEY in backend/.env to activate. Get a free key at console.groq.com.
 """
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 from app.config import settings
 
@@ -84,13 +84,8 @@ class TestGeneratorService:
     ) -> Dict[str, Any]:
         """
         Generate test cases using the configured LLM provider + optional RAG context.
-
-        Provider priority: OpenAI → Anthropic → Gemini → Demo mode
         """
         provider = settings.active_provider
-        if provider == "demo":
-            return self._demo_output(language, framework, test_types)
-
         context_str = "\n\n---\n\n".join(context_docs) if context_docs else "No additional context available."
         test_types_str = ", ".join(t.replace("_", " ").title() for t in test_types)
 
@@ -213,75 +208,4 @@ class TestGeneratorService:
             "coverage": f"~{coverage_pct}%",
             "coverage_pct": coverage_pct,
             "bug_detection_pct": bug_detection,
-        }
-
-    def _demo_output(self, language: str, framework: str, test_types: List[str], error: str = "") -> Dict[str, Any]:
-        """Return a demo output when no API key is configured"""
-        hint = f"# Error: {error}\n    # " if error else ""
-        # NOTE: plain string (not f-string) so that literal { } in code aren't parsed
-        demo_code = '''import pytest
-from unittest.mock import Mock, patch
-
-
-class TestDemoGenerated:
-    """
-    HINT_PLACEHOLDERDemo mode: configure ONE key in backend/.env:
-    #   OPENAI_API_KEY    = sk-...         (OpenAI GPT-4o / GPT-4-turbo)
-    #   ANTHROPIC_API_KEY = sk-ant-...     (Claude 3.5 Sonnet / Haiku)
-    #   GEMINI_API_KEY    = AIza...        (Gemini 2.0 Flash / 1.5 Pro)
-    """
-
-    def test_valid_input_returns_expected_result(self):
-        """Unit: Happy path - valid inputs produce correct output."""
-        # Arrange
-        expected = {"status": "success"}
-
-        # Act
-        # result = your_function(valid_input)
-
-        # Assert
-        # assert result == expected
-        assert True  # placeholder
-
-    def test_null_input_raises_value_error(self):
-        """Edge case: None input should raise ValueError."""
-        with pytest.raises((ValueError, TypeError)):
-            # your_function(None)
-            raise ValueError("Null input not allowed")
-
-    def test_empty_string_handled_gracefully(self):
-        """Edge case: Empty string input."""
-        # result = your_function("")
-        # assert result is not None
-        assert True
-
-    @pytest.mark.parametrize("input_val,expected", [
-        (1, True),
-        (0, False),
-        (-1, False),
-        (100, True),
-    ])
-    def test_parametrized_boundary_values(self, input_val, expected):
-        """Parametrized: Multiple boundary inputs tested."""
-        # result = validate(input_val)
-        # assert result == expected
-        assert isinstance(input_val, (int, float))
-
-    def test_integration_with_external_service(self):
-        """Integration: Mocked external service call."""
-        with patch("builtins.open") as mock_open:
-            mock_open.return_value.__enter__ = Mock(return_value=Mock(read=lambda: "data"))
-            mock_open.return_value.__exit__ = Mock(return_value=False)
-            assert True
-'''.replace("HINT_PLACEHOLDER", hint)
-        return {
-            "tests": demo_code,
-            "stats": {
-                "total": 5,
-                "unit": 1,
-                "integration": 1,
-                "edge": 2,
-                "coverage": "~80%",
-            },
-            "tokens": 312,
         }
