@@ -1,6 +1,6 @@
 ﻿# AI-Driven Automated Test Case Generation System
 
-> Automatically generate production-quality test suites from source code or documentation using **Groq LLM** + **RAG (Retrieval-Augmented Generation)** powered by ChromaDB and sentence-transformers.
+> Automatically generate production-quality test suites from source code or documentation using **Groq LLM** and **RAG (Retrieval-Augmented Generation)** powered by ChromaDB and sentence-transformers.
 
 [![Demo](https://img.shields.io/badge/Demo-Live%20Preview-blue?style=for-the-badge)](https://ai-driven-automated-test-case-generator.vercel.app/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python)](https://python.org)
@@ -11,240 +11,255 @@
 
 ## Table of Contents
 
-1. [What This Project Does](#what-this-project-does)
-2. [How It Works â€” Full Pipeline](#how-it-works--full-pipeline)
-3. [Architecture Overview](#architecture-overview)
-4. [Project Structure](#project-structure)
-5. [Tech Stack](#tech-stack)
-6. [Prerequisites](#prerequisites)
-7. [Step-by-Step Setup](#step-by-step-setup)
-   - [Step 1 â€” Clone the Repository](#step-1--clone-the-repository)
-   - [Step 2 â€” Get a Groq API Key](#step-2--get-a-groq-api-key)
-   - [Step 3 â€” Set Up the Backend](#step-3--set-up-the-backend)
-   - [Step 4 â€” Configure Environment Variables](#step-4--configure-environment-variables)
-   - [Step 5 â€” Start the Backend Server](#step-5--start-the-backend-server)
-   - [Step 6 â€” Set Up and Start the Frontend](#step-6--set-up-and-start-the-frontend)
-   - [Step 7 â€” Use the Application](#step-7--use-the-application)
-8. [RAG â€” Knowledge Base Indexing](#rag--knowledge-base-indexing)
-9. [API Reference](#api-reference)
-10. [Available Groq Models](#available-groq-models)
-11. [Configuration Reference](#configuration-reference)
+1. [What This Project Does](#1-what-this-project-does)
+2. [How It Works -- Full Pipeline](#2-how-it-works----full-pipeline)
+3. [Architecture Overview](#3-architecture-overview)
+4. [Project Structure](#4-project-structure)
+5. [Tech Stack](#5-tech-stack)
+6. [Prerequisites](#6-prerequisites)
+7. [Step-by-Step Setup](#7-step-by-step-setup)
+   - [Step 1 -- Clone the Repository](#step-1----clone-the-repository)
+   - [Step 2 -- Get a Groq API Key](#step-2----get-a-groq-api-key)
+   - [Step 3 -- Set Up the Backend](#step-3----set-up-the-backend)
+   - [Step 4 -- Configure Environment Variables](#step-4----configure-environment-variables)
+   - [Step 5 -- Start the Backend Server](#step-5----start-the-backend-server)
+   - [Step 6 -- Set Up and Start the Frontend](#step-6----set-up-and-start-the-frontend)
+   - [Step 7 -- Use the Application](#step-7----use-the-application)
+8. [RAG -- Knowledge Base Indexing](#8-rag----knowledge-base-indexing)
+9. [API Reference](#9-api-reference)
+10. [Available Groq Models](#10-available-groq-models)
+11. [Configuration Reference](#11-configuration-reference)
 
 ---
 
-## What This Project Does
+## 1. What This Project Does
 
-This system takes your **source code or documentation** as input and automatically produces a complete, framework-specific test suite using a large language model. It optionally enriches generation with **RAG**: related code or documentation you have previously indexed is retrieved from a local vector database and injected into the prompt as context, resulting in more accurate and project-aware tests.
+This system takes your **source code or documentation** as input and automatically produces a complete, framework-specific test suite using a large language model. It optionally enriches generation with **RAG**: related code or documentation you have previously indexed is retrieved from a local vector database and injected into the LLM prompt as context, resulting in more accurate and project-aware tests.
 
 **Key capabilities:**
-- Supports **Python** (pytest) and **JavaScript/TypeScript** (Jest) code input
+
+- Supports **Python** (pytest) and **JavaScript / TypeScript** (Jest) code input
 - Generates **unit tests**, **integration tests**, **edge case tests**, and **parametrized tests**
-- Optionally **uploads files** (`.py`, `.js`, `.ts`, `.txt`, `.md`, `.pdf`) to a local ChromaDB knowledge base for context-aware generation
-- Runs **fully locally** except for the Groq LLM call â€” no OpenAI key, no cloud embeddings
-- Displays **stats** per generation: test count, coverage estimate, mock usage, bug detection %
-- Tracks **generation history** in the Analytics page
+- Optionally **uploads reference files** (`.py`, `.js`, `.ts`, `.txt`, `.md`, `.pdf`) into a local ChromaDB knowledge base for context-aware generation
+- Runs **fully locally** except for the Groq LLM call -- no OpenAI key, no cloud embeddings needed
+- Displays **generation stats** per run: test count, coverage estimate, mock usage, bug detection %
+- Tracks **generation history** with charts in the Analytics page
 
 ---
 
-## How It Works â€” Full Pipeline
+## 2. How It Works -- Full Pipeline
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                        USER INPUT (Frontend)                            â”‚
-â”‚  â€¢ Paste source code / documentation into the editor                    â”‚
-â”‚  â€¢ Select language, framework, test types, model                        â”‚
-â”‚  â€¢ (Optional) Upload reference files to RAG knowledge base              â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                             â”‚  POST /api/generate/tests
-                             â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  STAGE 1 â€” REQUEST VALIDATION  (routers/generate.py)                    â”‚
-â”‚  â€¢ FastAPI validates request against GenerateRequest Pydantic model     â”‚
-â”‚  â€¢ Creates a background job, returns job_id immediately                 â”‚
-â”‚  â€¢ Validation: code must be present unless RAG is enabled with chunks   â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                             â”‚
-                             â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  STAGE 2 â€” RAG CONTEXT RETRIEVAL  (services/rag.py)                     â”‚
-â”‚  â€¢ If use_rag=true and ChromaDB has indexed chunks:                     â”‚
-â”‚    1. Input code is used as the search query                            â”‚
-â”‚    2. sentence-transformers (all-MiniLM-L6-v2) encodes the query        â”‚
-â”‚       into a dense vector â€” runs locally, no API key needed             â”‚
-â”‚    3. ChromaDB performs cosine similarity search across stored chunks   â”‚
-â”‚    4. Returns top-K (default 4) most relevant chunks                    â”‚
-â”‚       with source filename + similarity score                           â”‚
-â”‚  â€¢ If RAG is disabled or no chunks exist, context_docs = []            â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                             â”‚  context_docs (list of text chunks)
-                             â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  STAGE 3 â€” PROMPT CONSTRUCTION & LLM CALL  (services/generator.py)      â”‚
-â”‚  â€¢ TEST_GENERATION_TEMPLATE is filled with:                             â”‚
-â”‚    - RAG context chunks (or empty if none)                              â”‚
-â”‚    - Source code / documentation                                        â”‚
-â”‚    - Language, framework, test types, max_tests                         â”‚
-â”‚  â€¢ Two messages are sent to ChatGroq.ainvoke():                         â”‚
-â”‚    1. SystemMessage â€” expert test engineer persona                      â”‚
-â”‚    2. HumanMessage  â€” the filled template above                         â”‚
-â”‚  â€¢ Groq streams back raw test code (llama-3.3-70b-versatile by default) â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                             â”‚  raw test code string
-                             â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  STAGE 4 â€” STATS ANALYSIS & RESPONSE  (services/generator.py)           â”‚
-â”‚  â€¢ _compute_stats() scans generated code line by line:                  â”‚
-â”‚    - Counts test functions  (def test_ / it( / describe()               â”‚
-â”‚    - Counts assert statements and expect() calls                        â”‚
-â”‚    - Detects Mock / patch / jest.mock usage                             â”‚
-â”‚    - Classifies tests as unit / integration / edge by name keywords     â”‚
-â”‚    - Estimates coverage % and bug detection % from assertion density    â”‚
-â”‚  â€¢ Final JSON response:                                                 â”‚
-â”‚    { job_id, status, code, stats, context_used, tokens_used }          â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                             â”‚  JSON
-                             â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  FRONTEND DISPLAY  (pages/Generate.jsx)                                 â”‚
-â”‚  â€¢ Polls GET /api/generate/status/{job_id} until completed              â”‚
-â”‚  â€¢ Renders syntax-highlighted test code                                 â”‚
-â”‚  â€¢ Shows stats cards: test count, coverage %, mocks, bug detection      â”‚
-â”‚  â€¢ Shows which RAG source files were used as context                    â”‚
-â”‚  â€¢ Copy to clipboard / download as file                                 â”‚
-â”‚  â€¢ Saves result to localStorage â†’ visible in Analytics page             â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-```
-
----
-
-## Architecture Overview
-
-```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚             FRONTEND  (React 19 + Vite)               â”‚
-â”‚                                                        â”‚
-â”‚   pages/Generate.jsx     pages/Analytics.jsx           â”‚
-â”‚        â”‚                        â”‚                      â”‚
-â”‚   services/api.js (Axios)       â”‚                      â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                      â”‚
-               â”‚  REST  /api/*                            â”‚
-               â–¼                                          â”‚
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”‚
-â”‚             BACKEND  (FastAPI + Python)               â”‚ â”‚
-â”‚                                                        â”‚ â”‚
-â”‚  main.py  â”€â”€â–º  routers/generate.py                    â”‚ â”‚
-â”‚                  â”‚                                     â”‚ â”‚
-â”‚         â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                         â”‚ â”‚
-â”‚         â–¼                   â–¼                         â”‚ â”‚
-â”‚  services/generator.py  services/rag.py               â”‚ â”‚
-â”‚  (LangChain + Groq LLM) (ChromaDB + sentence-         â”‚ â”‚
-â”‚                           transformers)               â”‚ â”‚
-â”‚                               â”‚                       â”‚ â”‚
-â”‚                      chroma_db/  (persisted locally)  â”‚ â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚
-               â”‚                                         â”‚
-               â–¼                                         â”‚
-      Groq API (cloud LLM)                               â”‚
-      llama-3.3-70b-versatile                            â”‚
++-------------------------------------------------------------------------+
+|                        USER INPUT  (Frontend)                           |
+|  - Paste source code or documentation into the editor                  |
+|  - Select language, framework, test types, and model                   |
+|  - (Optional) Upload reference files to the RAG knowledge base         |
++------------------------------------+------------------------------------+
+                                     |
+                                     |  POST /api/generate/tests
+                                     v
++-------------------------------------------------------------------------+
+|  STAGE 1 -- REQUEST VALIDATION  (routers/generate.py)                  |
+|                                                                         |
+|  - FastAPI validates the request body against GenerateRequest           |
+|    (Pydantic model): code, language, framework, test_types, model,     |
+|    use_rag, max_tests                                                   |
+|  - Creates a background job and returns a job_id immediately            |
+|  - Validation rule: code must be present UNLESS use_rag=true and       |
+|    ChromaDB already has indexed chunks                                  |
++------------------------------------+------------------------------------+
+                                     |
+                                     v
++-------------------------------------------------------------------------+
+|  STAGE 2 -- RAG CONTEXT RETRIEVAL  (services/rag.py)                   |
+|                                                                         |
+|  If use_rag=true and ChromaDB has indexed chunks:                      |
+|    1. The input code is used as the search query                       |
+|    2. sentence-transformers (all-MiniLM-L6-v2) encodes the query       |
+|       into a 384-dimensional dense vector                               |
+|       >> runs fully locally, no API key needed <<                      |
+|    3. ChromaDB performs cosine similarity search across all stored     |
+|       chunks and returns the top-K (default: 4) most relevant results  |
+|    4. Each result contains: chunk text, source filename, score         |
+|                                                                         |
+|  If RAG is disabled or no chunks exist: context_docs = []             |
++------------------------------------+------------------------------------+
+                                     |  context_docs (list of text chunks)
+                                     v
++-------------------------------------------------------------------------+
+|  STAGE 3 -- PROMPT CONSTRUCTION & LLM CALL  (services/generator.py)   |
+|                                                                         |
+|  - TEST_GENERATION_TEMPLATE is filled with:                            |
+|      * RAG context chunks (or empty string if none)                    |
+|      * Source code / documentation from the user                       |
+|      * Language, framework, test types, max_tests                      |
+|  - Two messages are sent to ChatGroq.ainvoke():                        |
+|      1. SystemMessage -- expert test engineer persona with principles  |
+|      2. HumanMessage  -- the filled template above                     |
+|  - Groq returns the raw generated test code as a string                |
+|    (default model: llama-3.3-70b-versatile)                            |
++------------------------------------+------------------------------------+
+                                     |  raw test code string
+                                     v
++-------------------------------------------------------------------------+
+|  STAGE 4 -- STATS ANALYSIS & RESPONSE  (services/generator.py)         |
+|                                                                         |
+|  - _compute_stats() scans the generated code line-by-line:             |
+|      * Counts test functions: def test_ / it() / describe()            |
+|      * Counts assert statements and expect() calls                     |
+|      * Detects Mock / patch / jest.mock usage                          |
+|      * Classifies tests as unit / integration / edge by name keywords  |
+|      * Estimates coverage % and bug detection % from assertion density |
+|  - Final response JSON:                                                 |
+|      { job_id, status, code, stats, context_used, tokens_used }        |
++------------------------------------+------------------------------------+
+                                     |  JSON
+                                     v
++-------------------------------------------------------------------------+
+|  FRONTEND DISPLAY  (pages/Generate.jsx)                                 |
+|                                                                         |
+|  - Polls GET /api/generate/status/{job_id} every second until done     |
+|  - Renders syntax-highlighted test code (react-syntax-highlighter)     |
+|  - Shows stats cards: total tests, coverage %, mock count,             |
+|    bug detection %                                                      |
+|  - Shows "Context used" badges listing which RAG source files          |
+|    contributed context to this generation                               |
+|  - Copy to clipboard / Download as file buttons                        |
+|  - Saves result to localStorage -> visible in the Analytics page       |
++-------------------------------------------------------------------------+
 ```
 
 ---
 
-## Project Structure
+## 3. Architecture Overview
+
+```
++----------------------------------------------------+
+|           FRONTEND  (React 19 + Vite)              |
+|                                                    |
+|   pages/Generate.jsx     pages/Analytics.jsx       |
+|         |                       |                  |
+|   services/api.js  (Axios HTTP client)             |
++-------------------+----------------+--------------+
+                    |  REST  /api/*
+                    v
++----------------------------------------------------+
+|           BACKEND  (FastAPI + Python)              |
+|                                                    |
+|  main.py  -->  routers/generate.py                 |
+|                    |                               |
+|         +----------+-----------+                   |
+|         v                      v                   |
+|  services/generator.py  services/rag.py            |
+|  (LangChain + Groq LLM) (ChromaDB +                |
+|                          sentence-transformers)    |
+|                               |                    |
+|                 chroma_db/  (persisted on disk)    |
++-------------------+----------------------------+--+
+                    |
+                    v
+         Groq API  (cloud -- LLM only)
+         llama-3.3-70b-versatile
+```
+
+---
+
+## 4. Project Structure
 
 ```
 ai-driven-automated-test-case-generation-system/
-â”œâ”€â”€ README.md
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ main.py                    # FastAPI app + CORS + router mounting
-â”‚   â”œâ”€â”€ requirements.txt           # Python dependencies
-â”‚   â”œâ”€â”€ .env                       # GROQ_API_KEY (you create this, git-ignored)
-â”‚   â””â”€â”€ app/
-â”‚       â”œâ”€â”€ config.py              # Pydantic Settings â€” loads .env secrets + defaults
-â”‚       â”œâ”€â”€ constants.py           # Non-secret defaults (model, RAG params, CORS)
-â”‚       â”œâ”€â”€ routers/
-â”‚       â”‚   â””â”€â”€ generate.py        # All API endpoints
-â”‚       â””â”€â”€ services/
-â”‚           â”œâ”€â”€ generator.py       # Groq LLM test generation logic
-â”‚           â””â”€â”€ rag.py             # ChromaDB + sentence-transformers RAG service
-â””â”€â”€ frontend/
-    â”œâ”€â”€ package.json               # Node deps + scripts
-    â”œâ”€â”€ vite.config.js             # Vite config (proxy: /api â†’ localhost:8000)
-    â”œâ”€â”€ tailwind.config.js
-    â””â”€â”€ src/
-        â”œâ”€â”€ App.jsx                # Router setup
-        â”œâ”€â”€ main.jsx               # React entry point
-        â”œâ”€â”€ index.css              # Tailwind + custom glass-morphism styles
-        â”œâ”€â”€ components/
-        â”‚   â”œâ”€â”€ Layout/
-        â”‚   â”‚   â”œâ”€â”€ Layout.jsx     # App shell (sidebar + header + <Outlet>)
-        â”‚   â”‚   â”œâ”€â”€ Sidebar.jsx    # Navigation sidebar
-        â”‚   â”‚   â””â”€â”€ Header.jsx     # Top header bar
-        â”‚   â””â”€â”€ common/
-        â”‚       â”œâ”€â”€ Card.jsx       # Glass-morphism card wrapper
-        â”‚       â””â”€â”€ Button.jsx     # Reusable button component
-        â”œâ”€â”€ pages/
-        â”‚   â”œâ”€â”€ Generate.jsx       # Main page: code input, RAG upload, output
-        â”‚   â””â”€â”€ Analytics.jsx      # History + charts from localStorage
-        â”œâ”€â”€ services/
-        â”‚   â””â”€â”€ api.js             # Axios client for all backend calls
-        â””â”€â”€ utils/
-            â”œâ”€â”€ constants.js       # LANGUAGES, FRAMEWORK_FOR, DEFAULT_MODEL
-            â””â”€â”€ funcUtils.js       # parseError, copyToClipboard, downloadFile
+|-- README.md
+|-- backend/
+|   |-- main.py                     # FastAPI app entry point, CORS, router mounting
+|   |-- requirements.txt            # Python package dependencies
+|   |-- .env                        # Your secrets (GROQ_API_KEY) -- git-ignored
+|   `-- app/
+|       |-- config.py               # Pydantic Settings: loads .env + applies defaults
+|       |-- constants.py            # Non-secret defaults (model, RAG params, CORS)
+|       |-- routers/
+|       |   `-- generate.py         # All API endpoints (test generation + RAG index)
+|       `-- services/
+|           |-- generator.py        # Groq LLM test generation logic + stats
+|           `-- rag.py              # ChromaDB + sentence-transformers RAG service
+`-- frontend/
+    |-- package.json                # Node.js dependencies and scripts
+    |-- vite.config.js              # Vite config (proxies /api/* to localhost:8000)
+    |-- tailwind.config.js          # Tailwind CSS configuration
+    `-- src/
+        |-- App.jsx                 # React Router setup
+        |-- main.jsx                # React entry point
+        |-- index.css               # Tailwind + custom glass-morphism styles
+        |-- components/
+        |   |-- Layout/
+        |   |   |-- Layout.jsx      # App shell: sidebar + header + main outlet
+        |   |   |-- Sidebar.jsx     # Navigation sidebar
+        |   |   `-- Header.jsx      # Top header bar
+        |   `-- common/
+        |       |-- Card.jsx        # Glass-morphism card wrapper component
+        |       `-- Button.jsx      # Reusable button component
+        |-- pages/
+        |   |-- Generate.jsx        # Main page: code input, RAG upload panel, output
+        |   `-- Analytics.jsx       # History charts and per-run stats from localStorage
+        |-- services/
+        |   `-- api.js              # Axios client: generateTests, indexFile, etc.
+        `-- utils/
+            |-- constants.js        # LANGUAGES, FRAMEWORK_FOR, DEFAULT_MODEL
+            `-- funcUtils.js        # parseError, copyToClipboard, downloadFile
 ```
 
 ---
 
-## Tech Stack
+## 5. Tech Stack
 
 ### Backend
 
-| Package                 | Version   | Purpose                                         |
-|-------------------------|-----------|-------------------------------------------------|
-| FastAPI                 | 0.115.12  | REST API framework                              |
-| Uvicorn                 | 0.34.0    | ASGI server                                     |
-| Pydantic / pydantic-settings | 2.x  | Request validation + .env config loading        |
-| langchain               | 1.2.8     | LLM abstraction layer                           |
-| langchain-groq          | 1.1.2     | Groq LLM integration (ChatGroq)                 |
-| chromadb                | 0.6.3     | Local persistent vector store                   |
-| sentence-transformers   | 3.4.1     | Local text embeddings (all-MiniLM-L6-v2)        |
-| pdfplumber              | 0.11.4    | PDF text extraction for RAG indexing            |
-| python-multipart        | 0.0.20    | File upload support for FastAPI                 |
+| Package                   | Version  | Purpose                                              |
+|---------------------------|----------|------------------------------------------------------|
+| FastAPI                   | 0.115.12 | REST API framework                                   |
+| Uvicorn                   | 0.34.0   | ASGI server                                          |
+| Pydantic / pydantic-settings | 2.x   | Request validation and .env config loading           |
+| langchain                 | 1.2.8    | LLM abstraction layer                                |
+| langchain-groq            | 1.1.2    | Groq LLM integration (ChatGroq)                      |
+| chromadb                  | 0.6.3    | Local persistent vector store                        |
+| sentence-transformers     | 3.4.1    | Local text embeddings -- all-MiniLM-L6-v2 model      |
+| pdfplumber                | 0.11.4   | PDF text extraction for RAG indexing                 |
+| python-multipart          | 0.0.20   | File upload support for FastAPI endpoints            |
 
 ### Frontend
 
-| Package                  | Version  | Purpose                              |
-|--------------------------|----------|--------------------------------------|
-| React                    | 19       | UI framework                         |
-| Vite                     | 8        | Build tool + dev server              |
-| TailwindCSS              | 3        | Utility-first styling                |
-| React Router             | 7        | Client-side routing                  |
-| Axios                    | 1.7      | HTTP client                          |
-| React Syntax Highlighter | 15.6     | Syntax-highlighted code display      |
-| Recharts                 | 2.13     | Charts in the Analytics page         |
-| Lucide React             | 0.468    | Icon library                         |
-| React Hot Toast          | 2.4      | Toast notifications                  |
-| Framer Motion            | 11       | Animations                           |
-| @tanstack/react-query    | 5        | Server state management              |
+| Package                   | Version | Purpose                               |
+|---------------------------|---------|---------------------------------------|
+| React                     | 19      | UI framework                          |
+| Vite                      | 8       | Build tool and dev server             |
+| TailwindCSS               | 3       | Utility-first CSS styling             |
+| React Router              | 7       | Client-side routing                   |
+| Axios                     | 1.7     | HTTP client for API calls             |
+| React Syntax Highlighter  | 15.6    | Syntax-highlighted code output panel  |
+| Recharts                  | 2.13    | Charts in the Analytics page          |
+| Lucide React              | 0.468   | Icon library                          |
+| React Hot Toast           | 2.4     | Toast notifications                   |
+| Framer Motion             | 11      | UI animations                         |
+| @tanstack/react-query     | 5       | Server state management               |
 
 ---
 
-## Prerequisites
+## 6. Prerequisites
 
-| Tool    | Minimum Version | Notes                                      |
-|---------|-----------------|--------------------------------------------|
-| Python  | 3.10+           | Required for backend                       |
-| Node.js | 20+             | Required for frontend                      |
-| Yarn    | 4.x             | Frontend package manager (`npm i -g yarn`) |
-| Git     | any             | To clone the repo                          |
+| Tool    | Minimum Version | Notes                                          |
+|---------|-----------------|------------------------------------------------|
+| Python  | 3.10+           | Required for the backend                       |
+| Node.js | 20+             | Required for the frontend                      |
+| Yarn    | 4.x             | Frontend package manager (`npm install -g yarn`) |
+| Git     | any             | To clone the repository                        |
 
-> **Groq API key** â€” free tier available at [console.groq.com/keys](https://console.groq.com/keys). No credit card required.
+**Groq API key** -- free tier available at [console.groq.com/keys](https://console.groq.com/keys). No credit card required.
 
 ---
 
-## Step-by-Step Setup
+## 7. Step-by-Step Setup
 
-### Step 1 â€” Clone the Repository
+### Step 1 -- Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/ai-driven-automated-test-case-generation-system.git
@@ -253,19 +268,19 @@ cd ai-driven-automated-test-case-generation-system
 
 ---
 
-### Step 2 â€” Get a Groq API Key
+### Step 2 -- Get a Groq API Key
 
 1. Go to [https://console.groq.com/keys](https://console.groq.com/keys)
-2. Sign up for a **free** Groq account (no credit card required)
+2. Sign up for a **free** Groq account -- no credit card required
 3. Click **"Create API Key"**
-4. Give it a name (e.g. `test-gen-local`) and copy the key â€” it starts with `gsk_...`
-5. Keep this key ready for Step 4
+4. Give it a name (e.g. `test-gen-local`) and copy the generated key
+5. The key starts with `gsk_...` -- keep it ready for Step 4
 
 > Groq provides extremely fast inference for open-source models like LLaMA 3 and Mixtral at no cost on the free tier.
 
 ---
 
-### Step 3 â€” Set Up the Backend
+### Step 3 -- Set Up the Backend
 
 ```bash
 # Navigate to the backend folder
@@ -275,82 +290,76 @@ cd backend
 python -m venv venv
 
 # Activate the virtual environment
-# On Windows:
+# Windows:
 venv\Scripts\activate
-# On macOS / Linux:
-source venv/bin/activate
+# macOS / Linux:
+# source venv/bin/activate
 
 # Install all Python dependencies
 pip install -r requirements.txt
 ```
 
-**What this installs:**
+**What gets installed and why:**
 
-| Package               | Why it's needed                                                         |
-|-----------------------|-------------------------------------------------------------------------|
-| `fastapi` + `uvicorn` | Web server â€” handles all HTTP requests from the frontend                |
-| `langchain-groq`      | Connects to the Groq API to run LLaMA / Mixtral LLM inference          |
-| `chromadb`            | Local vector database that stores embedded document chunks              |
-| `sentence-transformers` | Converts text to vectors locally using `all-MiniLM-L6-v2` model â€” **no API key needed** |
-| `pdfplumber`          | Extracts plain text from uploaded PDF files for RAG indexing            |
-| `python-multipart`    | Enables file upload endpoints in FastAPI                                |
-| `pydantic-settings`   | Reads your `.env` file and maps values to typed config fields           |
+| Package                 | Why it is needed                                                         |
+|-------------------------|--------------------------------------------------------------------------|
+| `fastapi` + `uvicorn`   | Web server that handles all HTTP requests from the frontend              |
+| `langchain-groq`        | Connects to the Groq API to call LLaMA / Mixtral models                 |
+| `chromadb`              | Local vector database that stores and queries embedded document chunks   |
+| `sentence-transformers` | Converts text to vectors using `all-MiniLM-L6-v2` -- **no API key needed** |
+| `pdfplumber`            | Extracts plain text from uploaded PDF files before indexing             |
+| `python-multipart`      | Enables multipart file upload endpoints in FastAPI                       |
+| `pydantic-settings`     | Reads your `.env` file and maps values to typed Python config fields     |
 
-> **Note on sentence-transformers:** The embedding model (`all-MiniLM-L6-v2`) is automatically downloaded from HuggingFace on first run (~90 MB). After that it is cached locally. No API key or internet connection is required for embedding.
+> **Note on sentence-transformers:** The embedding model (`all-MiniLM-L6-v2`, ~90 MB) is downloaded from HuggingFace automatically on first use and cached locally at `~/.cache/huggingface/`. After the initial download, no internet connection is required for embedding.
 
 ---
 
-### Step 4 â€” Configure Environment Variables
+### Step 4 -- Configure Environment Variables
 
-Create a file named `.env` inside the `backend/` folder:
+Create a `.env` file inside the `backend/` folder. This file is already listed in `.gitignore` so it will never be committed.
 
 ```bash
-# On Windows (in the backend folder):
-echo GROQ_API_KEY=gsk_your_actual_key_here > .env
-
-# On macOS / Linux:
-echo "GROQ_API_KEY=gsk_your_actual_key_here" > .env
+# Open your text editor and create backend/.env with this content:
 ```
-
-Or create `backend/.env` manually with a text editor:
 
 ```env
 # backend/.env
 
-# Required â€” your Groq API key from https://console.groq.com/keys
+# Required -- get your free key at https://console.groq.com/keys
 GROQ_API_KEY=gsk_your_actual_key_here
 ```
 
-**Optional overrides** â€” these values already have sensible defaults in `constants.py` but can be overridden in `.env`:
+**Optional overrides** -- these already have sensible defaults in `constants.py` but can be changed in `.env` if needed:
 
 ```env
-# LLM settings
-DEFAULT_MODEL=llama-3.3-70b-versatile
-MAX_TOKENS=4096
+# Use a smaller / faster model
+DEFAULT_MODEL=llama-3.1-8b-instant
+
+# Increase token budget for very large files
+MAX_TOKENS=8192
+
+# LLM creativity (0.0 = focused/deterministic, 1.0 = creative)
 TEMPERATURE=0.2
 
-# RAG / vector store settings
-CHROMA_PERSIST_DIR=./chroma_db       # where ChromaDB data is saved
-EMBEDDING_MODEL=all-MiniLM-L6-v2     # sentence-transformers model name
-RAG_TOP_K=4                          # number of chunks retrieved per query
-CHUNK_SIZE=512                       # characters per chunk
-CHUNK_OVERLAP=100                    # overlap between consecutive chunks
-```
+# Number of RAG context chunks injected per generation (default: 4)
+RAG_TOP_K=4
 
-> **Security:** The `.env` file is listed in `.gitignore` and will never be committed. Never share your API key publicly.
+# Change ChromaDB storage location
+CHROMA_PERSIST_DIR=./chroma_db
+```
 
 ---
 
-### Step 5 â€” Start the Backend Server
+### Step 5 -- Start the Backend Server
 
-Make sure your virtual environment is still activated, then:
+Make sure your virtual environment is active, then run from the `backend/` directory:
 
 ```bash
-# From the backend/ directory
 uvicorn main:app --reload --port 8000
 ```
 
-You should see output like:
+Expected output:
 
 ```
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
@@ -358,19 +367,19 @@ INFO:     Started reloader process
 INFO:     Application startup complete.
 ```
 
-**Verify the backend is running:**
+**Verify it is running:**
 
-| URL                                    | What you should see                        |
-|----------------------------------------|--------------------------------------------|
-| http://localhost:8000/api/health       | `{"status":"ok","version":"1.0.0"}`        |
-| http://localhost:8000/api/docs         | Interactive Swagger UI (all endpoints)     |
-| http://localhost:8000/api/redoc        | ReDoc API documentation                    |
+| URL                                    | Expected result                              |
+|----------------------------------------|----------------------------------------------|
+| http://localhost:8000/api/health       | `{"status":"ok","version":"1.0.0"}`          |
+| http://localhost:8000/api/docs         | Swagger UI listing all available endpoints   |
+| http://localhost:8000/api/redoc        | ReDoc API documentation                      |
 
-> **Keep this terminal open.** The `--reload` flag automatically restarts the server when you edit backend files.
+> **Keep this terminal open.** The `--reload` flag restarts the server automatically whenever you save a backend file.
 
 ---
 
-### Step 6 â€” Set Up and Start the Frontend
+### Step 6 -- Set Up and Start the Frontend
 
 Open a **new terminal** (keep the backend terminal running):
 
@@ -385,127 +394,168 @@ yarn install
 yarn dev
 ```
 
-You should see:
+Expected output:
 
 ```
-  VITE v8.x.x  ready in 500ms
+  VITE v8.x.x  ready in ~500ms
 
-  âžœ  Local:   http://localhost:5173/
-  âžœ  Network: use --host to expose
+  Local:   http://localhost:5173/
 ```
 
-Open your browser and go to [http://localhost:5173](http://localhost:5173)
+Open your browser and go to **http://localhost:5173**.
 
-> **API proxy:** Vite is configured to forward all `/api/*` requests from the frontend to `http://localhost:8000`, so there are no CORS issues during development.
+> **API proxy:** Vite is configured in `vite.config.js` to forward all `/api/*` requests to `http://localhost:8000`. You will not encounter CORS issues during local development.
 
 ---
 
-### Step 7 â€” Use the Application
+### Step 7 -- Use the Application
 
-#### Generating Tests (Basic)
+#### 7a. Basic Test Generation (No RAG)
 
-1. Open [http://localhost:5173](http://localhost:5173) in your browser
-2. You land on the **Generate** page
-3. Paste your source code into the large text editor on the left
-4. Use the configuration panel to set:
-   - **Language** â€” Python or JavaScript/TypeScript
-   - **Test Types** â€” check any combination of: Unit, Integration, Edge Cases, Parametrized
-   - **Max Tests** â€” slider from 1 to 50 (default 10)
-   - **RAG toggle** â€” On = use indexed knowledge base context; Off = generate from code only
+1. Open **http://localhost:5173** in your browser
+2. You will land on the **Generate** page
+3. Paste your source code into the large code editor on the left
+4. Configure the options on the right panel:
+   - **Language** -- Python or JavaScript / TypeScript
+   - **Test Types** -- tick any combination of: Unit, Integration, Edge Cases, Parametrized
+   - **Max Tests** -- drag the slider (range: 1 to 50, default: 10)
+   - **RAG toggle** -- switch it **Off** if you have no indexed files yet
 5. Click **Generate Tests**
-6. The request is sent to the backend as a background job
-7. The frontend polls `/api/generate/status/{job_id}` every second until complete
-8. Results appear on the right: syntax-highlighted test code + stats cards
-9. Use **Copy** or **Download** to save the output
-
-#### Using RAG â€” Indexing Reference Files
-
-RAG allows you to upload your existing codebase or documentation so the LLM receives relevant context when generating tests. This produces more accurate, project-aware results.
-
-1. In the **RAG Knowledge Base** panel on the Generate page, click **Upload File**
-2. Select a file of one of the supported types:
-
-   | Extension | Type                        |
-   |-----------|-----------------------------|
-   | `.py`     | Python source file          |
-   | `.js`     | JavaScript source file      |
-   | `.ts`     | TypeScript source file      |
-   | `.txt`    | Plain text document         |
-   | `.md`     | Markdown document           |
-   | `.pdf`    | PDF document                |
-
-3. The file is sent to `POST /api/generate/index`, where it is:
-   - Read and split into overlapping chunks (512 chars, 100 char overlap)
-   - Each chunk is encoded into a vector using `all-MiniLM-L6-v2` (runs locally)
-   - Stored in ChromaDB under a unique `doc_id`
-4. The **chunk count** and **indexed docs list** update immediately
-5. You can index multiple files â€” they all accumulate in the same vector store
-6. To remove a file, click the **trash icon** next to it in the indexed docs list
-7. Enable the **RAG toggle** (On) before clicking Generate Tests â€” the backend will retrieve the top-4 most relevant chunks and inject them into the LLM prompt
-
-> **Tip:** You can generate tests *without* pasting any code if you have RAG files indexed and the toggle is On. The LLM will use the indexed context as its primary source.
-
-#### Viewing Analytics
-
-- Click **Analytics** in the sidebar
-- Every successful test generation is saved to `localStorage`
-- The Analytics page shows: total tests generated, language breakdown (pie chart), test type distribution (bar chart), coverage trends (line chart), and per-run history table
+6. The frontend submits the code to `POST /api/generate/tests` as a background job
+7. It polls `GET /api/generate/status/{job_id}` every second until the job completes
+8. The output panel shows:
+   - Syntax-highlighted generated test code
+   - Stats cards: total tests, coverage estimate, mock usage, bug detection %
+9. Use **Copy** to copy the code or **Download** to save it as a `.py` / `.js` file
 
 ---
 
-## RAG â€” Knowledge Base Indexing
+#### 7b. Context-Aware Generation with RAG
 
-The RAG pipeline is designed to be **fully local** â€” no external embedding API is needed.
+RAG lets you upload your existing codebase or documentation so the LLM receives relevant context during generation. This produces more accurate, project-aware tests.
+
+**Indexing reference files:**
+
+1. In the **RAG Knowledge Base** panel at the top of the Generate page, click **Upload File**
+2. Select a file. Supported formats:
+
+   | Extension | Type                    |
+   |-----------|-------------------------|
+   | `.py`     | Python source file      |
+   | `.js`     | JavaScript source file  |
+   | `.ts`     | TypeScript source file  |
+   | `.txt`    | Plain text document     |
+   | `.md`     | Markdown document       |
+   | `.pdf`    | PDF document            |
+
+3. When the file is uploaded, the backend:
+   - Reads the file (uses pdfplumber for PDF, UTF-8 for all others)
+   - Splits the text into overlapping 512-character chunks (100-char overlap)
+   - Encodes each chunk into a 384-dim vector using `all-MiniLM-L6-v2` (runs locally)
+   - Stores all chunk vectors in ChromaDB under a unique `doc_id`
+4. The **chunk count** and **indexed docs list** in the UI update immediately
+5. You can index multiple files -- they all accumulate in the same vector store
+6. ChromaDB data persists to `backend/chroma_db/` -- **you do not need to re-upload files after a server restart**
+
+**Generating tests with RAG context:**
+
+1. Enable the **RAG toggle** (set to On)
+2. Paste your code as usual (or leave the editor empty to generate tests purely from indexed docs)
+3. Click **Generate Tests**
+4. The backend retrieves the top-4 most relevant chunks from ChromaDB and injects them into the LLM prompt
+5. The result panel shows a **"Context used"** section listing which source files contributed context
+
+**Removing indexed files:**
+
+- Click the **trash icon** next to any file in the indexed docs list
+- That document's chunks are immediately deleted from ChromaDB
+
+---
+
+#### 7c. Analytics Page
+
+- Click **Analytics** in the left sidebar
+- Every successful generation is saved automatically to `localStorage`
+- The page displays:
+  - **Total tests generated** (cumulative across all runs)
+  - **Language breakdown** (pie chart: Python vs JavaScript)
+  - **Test type distribution** (bar chart: unit / integration / edge / parametrized)
+  - **Coverage trend over time** (line chart)
+  - **Per-run history table** with timestamps, model used, and stats
+
+---
+
+## 8. RAG -- Knowledge Base Indexing
+
+The RAG pipeline is fully local -- no external embedding API is called.
 
 ### Indexing Flow
 
 ```
-Uploaded file
-     â”‚
-     â–¼
-_read_file()          â† extracts plain text (pdfplumber for PDF, utf-8 for others)
-     â”‚
-     â–¼
-_split_text()         â† splits into 512-char chunks with 100-char overlap
-     â”‚
-     â–¼
-SentenceTransformer   â† encodes each chunk to a dense vector (all-MiniLM-L6-v2, local)
-     â”‚
-     â–¼
-ChromaDB collection   â† stores (vector, text, metadata) â€” persisted to ./chroma_db/
+Uploaded file  (POST /api/generate/index)
+       |
+       v
+_read_file()
+  - .pdf  --> pdfplumber extracts text page by page
+  - others --> read as plain UTF-8 text
+       |
+       v
+_split_text()
+  - Splits into 512-character chunks
+  - 100-character overlap between consecutive chunks
+  - Line-aware: never cuts in the middle of a line
+       |
+       v
+SentenceTransformerEmbeddingFunction (all-MiniLM-L6-v2)
+  - Encodes each chunk to a 384-dimensional dense vector
+  - Runs on CPU, fully local, no internet required after first download
+       |
+       v
+ChromaDB PersistentClient  (collection: "test_gen_docs")
+  - Stores: vector, chunk text, doc_id, source filename
+  - Persisted to disk at ./chroma_db/
 ```
 
 ### Query Flow (at generation time)
 
 ```
-Input code (used as query)
-     â”‚
-     â–¼
-SentenceTransformer   â† encode query to vector
-     â”‚
-     â–¼
-ChromaDB.query()      â† cosine similarity search, returns top-K chunks
-     â”‚
-     â–¼
-Injected into prompt  â† "## Context from codebase (RAG retrieved): ..."
+Input code string  (used as the search query)
+       |
+       v
+SentenceTransformerEmbeddingFunction
+  - Encodes query to 384-dim vector (local)
+       |
+       v
+ChromaDB collection.query()
+  - Cosine similarity search
+  - Returns top-K results (default K=4)
+       |
+       v
+context_docs  [ {content, source, score}, ... ]
+       |
+       v
+Injected into LLM prompt under:
+  "## Context from codebase (RAG retrieved):"
 ```
 
-### ChromaDB Persistence
+### Persistence and Reset
 
-- The vector store is saved to `backend/chroma_db/` by default
-- Data **persists across server restarts** â€” you do not need to re-upload files each time
-- To completely reset the knowledge base, delete the `chroma_db/` folder and restart the backend
+- Data is stored at `backend/chroma_db/` by default (change via `CHROMA_PERSIST_DIR` in `.env`)
+- Survives backend restarts automatically
+- To fully reset the knowledge base: stop the server, delete the `chroma_db/` folder, restart
 
 ---
 
-## API Reference
+## 9. API Reference
 
 ### Test Generation
 
 #### `POST /api/generate/tests`
-Submits a test generation job. Returns immediately with a `job_id`.
+
+Submit a test generation job. Returns a `job_id` immediately; poll the status endpoint for the result.
 
 **Request body:**
+
 ```json
 {
   "code": "def add(a, b):\n    return a + b",
@@ -519,18 +569,19 @@ Submits a test generation job. Returns immediately with a `job_id`.
 }
 ```
 
-| Field        | Type     | Default                     | Description                            |
-|--------------|----------|-----------------------------|----------------------------------------|
-| `code`       | string   | â€”                           | Source code or documentation           |
-| `input_type` | string   | `"code"`                    | `"code"` or `"docs"`                   |
-| `language`   | string   | `"Python"`                  | Programming language                   |
-| `framework`  | string   | `"pytest"`                  | Test framework                         |
-| `test_types` | string[] | `["unit", "edge"]`          | Test categories to generate            |
-| `model`      | string   | `"llama-3.3-70b-versatile"` | Groq model ID                          |
-| `use_rag`    | bool     | `true`                      | Whether to retrieve RAG context        |
-| `max_tests`  | int      | `10`                        | Maximum number of tests (1â€“50)         |
+| Field        | Type     | Default                     | Description                                 |
+|--------------|----------|-----------------------------|---------------------------------------------|
+| `code`       | string   | required                    | Source code or documentation to test        |
+| `input_type` | string   | `"code"`                    | `"code"` or `"docs"`                        |
+| `language`   | string   | `"Python"`                  | Target programming language                 |
+| `framework`  | string   | `"pytest"`                  | Test framework (pytest, jest, etc.)         |
+| `test_types` | string[] | `["unit", "edge"]`          | Test categories to generate                 |
+| `model`      | string   | `"llama-3.3-70b-versatile"` | Groq model ID                               |
+| `use_rag`    | bool     | `true`                      | Whether to retrieve RAG context             |
+| `max_tests`  | int      | `10`                        | Max tests to generate (1-50)                |
 
-**Response:**
+**Response (queued):**
+
 ```json
 {
   "job_id": "a1b2c3d4",
@@ -541,14 +592,16 @@ Submits a test generation job. Returns immediately with a `job_id`.
 ---
 
 #### `GET /api/generate/status/{job_id}`
+
 Poll for job result.
 
 **Response (completed):**
+
 ```json
 {
   "job_id": "a1b2c3d4",
   "status": "completed",
-  "code": "import pytest\n\ndef test_add_two_integers():\n    ...",
+  "code": "import pytest\n\ndef test_add_two_integers():\n    assert add(2, 3) == 5",
   "stats": {
     "total": 8,
     "unit": 5,
@@ -565,12 +618,24 @@ Poll for job result.
 }
 ```
 
+**Response (failed):**
+
+```json
+{
+  "job_id": "a1b2c3d4",
+  "status": "failed",
+  "error": "Groq API error: invalid API key"
+}
+```
+
 ---
 
 #### `GET /api/generate/providers`
-Returns the active LLM provider and available model list.
+
+Returns the active LLM provider and the list of available models.
 
 **Response:**
+
 ```json
 {
   "provider": "groq",
@@ -590,12 +655,15 @@ Returns the active LLM provider and available model list.
 ### RAG Knowledge Base
 
 #### `POST /api/generate/index`
-Upload a file and index it into ChromaDB.
 
-**Request:** `multipart/form-data` with field `file`  
-**Supported types:** `.py` `.js` `.ts` `.txt` `.md` `.pdf`
+Upload a file and index its contents into ChromaDB.
+
+**Request:** `multipart/form-data` with a field named `file`
+
+**Supported file types:** `.py` `.js` `.ts` `.txt` `.md` `.pdf`
 
 **Response:**
+
 ```json
 {
   "doc_id": "utils_py_a1b2c3",
@@ -608,9 +676,11 @@ Upload a file and index it into ChromaDB.
 ---
 
 #### `GET /api/generate/index/status`
-Returns total number of chunks currently stored.
+
+Returns the total number of chunks currently in the vector store.
 
 **Response:**
+
 ```json
 {
   "total_chunks": 47
@@ -620,9 +690,11 @@ Returns total number of chunks currently stored.
 ---
 
 #### `DELETE /api/generate/index/{doc_id}`
-Remove all chunks associated with a document from ChromaDB.
+
+Remove all chunks belonging to a document from ChromaDB.
 
 **Response:**
+
 ```json
 {
   "deleted": true,
@@ -636,39 +708,40 @@ Remove all chunks associated with a document from ChromaDB.
 ### Health
 
 #### `GET /api/health`
+
 ```json
 { "status": "ok", "version": "1.0.0" }
 ```
 
 ---
 
-## Available Groq Models
+## 10. Available Groq Models
 
-| Model ID                      | Best For                           | Context Window |
-|-------------------------------|------------------------------------|----------------|
-| `llama-3.3-70b-versatile`     | Best quality (default)             | 128k tokens    |
-| `llama-3.1-8b-instant`        | Fastest responses / low latency    | 128k tokens    |
-| `llama3-70b-8192`             | High quality, longer context       | 8k tokens      |
-| `mixtral-8x7b-32768`          | Excellent for code generation      | 32k tokens     |
-| `gemma2-9b-it`                | Lightweight, fast                  | 8k tokens      |
+| Model ID                      | Best For                              | Context Window |
+|-------------------------------|---------------------------------------|----------------|
+| `llama-3.3-70b-versatile`     | Best overall quality (default)        | 128k tokens    |
+| `llama-3.1-8b-instant`        | Fastest / lowest latency              | 128k tokens    |
+| `llama3-70b-8192`             | High quality with longer context      | 8k tokens      |
+| `mixtral-8x7b-32768`          | Excellent for code generation         | 32k tokens     |
+| `gemma2-9b-it`                | Lightweight and fast                  | 8k tokens      |
 
-All models are **free** on Groq's free tier.
+All models are **free** on Groq's free tier. Select a model in the configuration panel on the Generate page, or set `DEFAULT_MODEL` in `backend/.env`.
 
 ---
 
-## Configuration Reference
+## 11. Configuration Reference
 
-All defaults live in `backend/app/constants.py`. Override any value in `backend/.env`.
+All defaults are defined in `backend/app/constants.py`. Override any value by adding the corresponding line to `backend/.env`.
 
-| Variable            | Default                        | Description                               |
-|---------------------|--------------------------------|-------------------------------------------|
-| `GROQ_API_KEY`      | *(required)*                   | Your Groq API key                         |
-| `DEFAULT_MODEL`     | `llama-3.3-70b-versatile`      | LLM model used when not specified         |
-| `MAX_TOKENS`        | `4096`                         | Max output tokens per generation          |
-| `TEMPERATURE`       | `0.2`                          | LLM sampling temperature (0 = focused)   |
-| `CHROMA_PERSIST_DIR`| `./chroma_db`                  | Path where ChromaDB data is stored        |
-| `EMBEDDING_MODEL`   | `all-MiniLM-L6-v2`             | sentence-transformers model for embeddings|
-| `RAG_TOP_K`         | `4`                            | Number of chunks retrieved per query      |
-| `CHUNK_SIZE`        | `512`                          | Characters per text chunk                 |
-| `CHUNK_OVERLAP`     | `100`                          | Overlap between consecutive chunks        |
-| `UPLOAD_DIR`        | `./uploads`                    | Temp folder for uploaded files            |
+| Variable              | Default                   | Description                                           |
+|-----------------------|---------------------------|-------------------------------------------------------|
+| `GROQ_API_KEY`        | *(required)*              | Your Groq API key from console.groq.com/keys          |
+| `DEFAULT_MODEL`       | `llama-3.3-70b-versatile` | LLM model used when not explicitly specified          |
+| `MAX_TOKENS`          | `4096`                    | Maximum output tokens per generation                  |
+| `TEMPERATURE`         | `0.2`                     | LLM sampling temperature (0 = deterministic)          |
+| `CHROMA_PERSIST_DIR`  | `./chroma_db`             | Directory where ChromaDB data is stored on disk       |
+| `EMBEDDING_MODEL`     | `all-MiniLM-L6-v2`        | sentence-transformers model used for embeddings       |
+| `RAG_TOP_K`           | `4`                       | Number of context chunks retrieved per query          |
+| `CHUNK_SIZE`          | `512`                     | Characters per text chunk when indexing               |
+| `CHUNK_OVERLAP`       | `100`                     | Overlap between consecutive chunks (prevents cutoffs) |
+| `UPLOAD_DIR`          | `./uploads`               | Temporary folder for uploaded files                   |
