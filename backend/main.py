@@ -37,14 +37,20 @@ app.include_router(generate.router, prefix="/api/generate", tags=["Test Generati
 @app.on_event("startup")
 async def startup_event():
     """
-    Eagerly initialise the RAG service (downloads sentence-transformers model
-    and opens ChromaDB) at server boot so the first user request is not slow.
+    Kick off RAG initialisation in a background thread so the server starts
+    accepting connections immediately (avoids Render port-scan timeout).
+    The sentence-transformers model download happens in the background.
     """
-    try:
-        rag_service._try_init()
-        print("RAG service initialised successfully")
-    except Exception as e:
-        print(f"RAG init skipped (non-fatal): {e}")
+    import threading
+
+    def _init():
+        try:
+            rag_service._try_init()
+            print("RAG service initialised successfully")
+        except Exception as e:
+            print(f"RAG init skipped (non-fatal): {e}")
+
+    threading.Thread(target=_init, daemon=True).start()
 
 
 @app.get("/api/health")
@@ -53,4 +59,6 @@ async def health():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
